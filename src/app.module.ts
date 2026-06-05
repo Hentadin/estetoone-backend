@@ -9,6 +9,9 @@ import { HealthModule } from './modules/health/health.module';
 import { MedicalRecordsModule } from './modules/medical-records/medical-records.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PlansModule } from './modules/plans/plans.module';
+import { ConsultationsModule } from './modules/consultations/consultations.module';
+import { DoctorDashboardModule } from './modules/doctor-dashboard/doctor-dashboard.module';
+import { DoctorsModule } from './modules/doctors/doctors.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 
 @Module({
@@ -26,6 +29,9 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
     PaymentsModule,
     ProfilesModule,
     MedicalRecordsModule,
+    DoctorsModule,
+    ConsultationsModule,
+    DoctorDashboardModule,
   ],
 })
 export class AppModule {}
