@@ -87,21 +87,13 @@ describe('Onboarding endpoints (e2e)', () => {
     expect(response.body).toEqual({ valid: true });
   });
 
-  it('POST /payments/validate accepts valid card data', async () => {
+  it('GET /payments/plans returns available plans for signup', async () => {
     const response = await request(app.getHttpServer())
-      .post(`/${apiPrefix}/payments/validate`)
-      .send({
-        cardName: 'Onboarding Patient',
-        cardNumber: '4111111111111111',
-        cardExpiry: '12/30',
-        cardCvv: '123',
-      })
+      .get(`/${apiPrefix}/payments/plans`)
       .expect(200);
 
-    expect(response.body).toEqual({
-      valid: true,
-      message: 'Payment method validated',
-    });
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body.some((plan: { type: string }) => plan.type === 'basic')).toBe(true);
   });
 
   it('POST /auth/register completes patient onboarding', async () => {
