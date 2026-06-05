@@ -51,7 +51,13 @@ npm run prisma:seed
 npm run start:dev
 ```
 
-The API runs at `http://localhost:3000`. Health check: `GET http://localhost:3000/v1/health`
+The API runs at `http://localhost:3000`.
+
+| Probe | Endpoint | Purpose |
+|-------|----------|---------|
+| Liveness | `GET /v1/health/live` | Process is running |
+| Readiness | `GET /v1/health/ready` | DB + Redis are up (503 if degraded) |
+| Legacy | `GET /v1/health` | Same checks as readiness (always 200) |
 
 ## Project Structure
 
@@ -98,6 +104,14 @@ npm run test:integration
 ```
 
 Integration tests require PostgreSQL and Redis running via `docker compose up`.
+
+## Observability
+
+- **Structured logging:** Pino (JSON in prod, pretty in dev) with PHI field redaction
+- **Error tracking:** Sentry (optional — set `SENTRY_DSN` in `.env`)
+- **Performance:** `X-Response-Time-Ms` response header on every request
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for staging/prod AWS deployment, backups, and encryption.
 
 ## Scripts
 

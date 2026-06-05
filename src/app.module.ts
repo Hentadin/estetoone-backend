@@ -1,8 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { validateEnv } from './config/env.validation';
+import { RequestTimingInterceptor } from './common/interceptors/request-timing.interceptor';
 import { AuditModule } from './infrastructure/audit/audit.module';
 import { DatabaseModule } from './infrastructure/database/database.module';
+import { LoggingModule } from './infrastructure/logging/logging.module';
+import { SentryModule } from './infrastructure/monitoring/sentry.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
@@ -17,6 +21,8 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
       isGlobal: true,
       validate: validateEnv,
     }),
+    LoggingModule,
+    SentryModule.forRoot(),
     DatabaseModule,
     RedisModule,
     AuditModule,
@@ -26,6 +32,12 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
     PaymentsModule,
     ProfilesModule,
     MedicalRecordsModule,
+  ],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RequestTimingInterceptor,
+    },
   ],
 })
 export class AppModule {}
