@@ -4,6 +4,7 @@ import * as cookieParser from 'cookie-parser';
 import * as request from 'supertest';
 import { PrismaClient, UserRole } from '@prisma/client';
 import { AppModule } from '../../src/app.module';
+import { seedPaymentPlans } from '../helpers/seed-payment-plans';
 
 describe('Onboarding endpoints (e2e)', () => {
   let app: INestApplication;
@@ -14,6 +15,7 @@ describe('Onboarding endpoints (e2e)', () => {
   beforeAll(async () => {
     prisma = new PrismaClient();
     await prisma.$connect();
+    await seedPaymentPlans(prisma);
 
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
