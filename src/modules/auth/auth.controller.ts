@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -15,7 +16,9 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
 import { AuthResponseDto, MeResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
+import { CheckEmailQueryDto } from './dto/check-email.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ValidateRegistrationDto } from './dto/validate-registration.dto';
 import { TokenService } from './token.service';
 import { AuthenticatedUser } from './types/authenticated-user.type';
 
@@ -25,6 +28,18 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly tokenService: TokenService,
   ) {}
+
+  @Get('check-email')
+  @HttpCode(200)
+  checkEmail(@Query() query: CheckEmailQueryDto): Promise<{ available: boolean }> {
+    return this.authService.checkEmailAvailability(query.email);
+  }
+
+  @Post('validate-registration')
+  @HttpCode(200)
+  validateRegistration(@Body() dto: ValidateRegistrationDto): Promise<{ valid: true }> {
+    return this.authService.validateRegistration(dto);
+  }
 
   @Post('register')
   @HttpCode(201)

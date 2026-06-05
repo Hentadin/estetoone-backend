@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PaymentPlanType, User, UserRole } from '@prisma/client';
+import { PaymentPlanType, Prisma, User, UserRole } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 
 export interface CreateUserInput {
@@ -18,6 +18,7 @@ export interface CreatePatientProfileInput {
   address?: string;
   emergencyContact?: string;
   emergencyPhone?: string;
+  behavioralData?: Prisma.InputJsonValue;
 }
 
 export interface CreateDoctorProfileInput {
@@ -80,6 +81,7 @@ export class AuthRepository {
                   address: profile.data.address,
                   emergencyContact: profile.data.emergencyContact,
                   emergencyPhone: profile.data.emergencyPhone,
+                  behavioralData: profile.data.behavioralData,
                 },
               }
             : undefined,

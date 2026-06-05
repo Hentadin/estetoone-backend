@@ -9,6 +9,7 @@ import { AuthRepository } from './auth.repository';
 import { AuthResponseDto, MeResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ValidateRegistrationDto } from './dto/validate-registration.dto';
 import { HashingService } from './hashing.service';
 import { TokenService } from './token.service';
 import { AuthenticatedUser } from './types/authenticated-user.type';
@@ -69,6 +70,9 @@ export class AuthService {
               address: dto.address,
               emergencyContact: dto.emergencyContact,
               emergencyPhone: dto.emergencyPhone,
+              behavioralData: dto.aiCommunicationStyle
+                ? { aiCommunicationStyle: dto.aiCommunicationStyle }
+                : undefined,
             },
           };
 
@@ -91,6 +95,29 @@ export class AuthService {
       role: user.role,
       name: displayName,
     });
+  }
+
+  async checkEmailAvailability(email: string): Promise<{ available: boolean }> {
+    const existing = await this.authRepository.findUserByEmail(email);
+    return { available: !existing };
+  }
+
+  async validateRegistration(dto: ValidateRegistrationDto): Promise<{ valid: true }> {
+    const existing = await this.authRepository.findUserByEmail(dto.email);
+    if (existing) {
+      throw new ConflictException('Email already registered');
+    }
+
+    const paymentPlan = await this.authRepository.findPaymentPlanByType(dto.planId);
+    if (!paymentPlan) {
+      throw new BadRequestException(`Plan "${dto.planId}" is not available`);
+    }
+
+    if (!dto.aiCommunicationStyle) {
+      throw new BadRequestException('aiCommunicationStyle is required');
+    }
+
+    return { valid: true };
   }
 
   async login(dto: LoginDto): Promise<AuthTokensResult> {
