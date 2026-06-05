@@ -1,0 +1,304 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  patient
+  doctor
+  admin
+}
+
+enum ConditionSeverity {
+  mild
+  moderate
+  severe
+  controlled
+}
+
+enum ConditionIcon {
+  heart
+  calendar
+  clock
+  pill
+  activity
+  other
+}
+
+enum VitalType {
+  blood_pressure
+  heart_rate
+  temperature
+  oxygen_saturation
+  weight
+  glucose
+}
+
+enum ConsultationType {
+  INSTANT
+  SCHEDULED
+}
+
+enum ConsultationStatus {
+  waiting
+  active
+  completed
+  cancelled
+}
+
+enum PaymentPlanType {
+  basic
+  premium
+  family
+  doctor
+}
+
+enum SubscriptionStatus {
+  active
+  past_due
+  cancelled
+  trialing
+}
+
+enum AuditAction {
+  create
+  read
+  update
+  delete
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  passwordHash   String    @map("password_hash")
+  role           UserRole  @default(patient)
+  planId         String?   @map("plan_id")
+  lgpdConsentAt  DateTime? @map("lgpd_consent_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  patientProfile PatientProfile?
+  doctorProfile  DoctorProfile?
+  subscription   Subscription?
+  auditLogs      AuditLog[]
+  refreshTokens  RefreshToken[]
+
+  @@map("users")
+}
+
+model PatientProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("user_id")
+  name             String   @map("nome_completo")
+  phone            String?
+  dateOfBirth      DateTime @map("data_nascimento") @db.Date
+  gender           String?
+  address          String?
+  medicalHistory   String?  @map("medical_history")
+  allergies        String?
+  emergencyContact String?  @map("emergency_contact")
+  emergencyPhone   String?  @map("emergency_phone")
+  bloodType        String?  @map("blood_type")
+  height           String?
+  weight           String?
+  profilePhotoUrl  String?  @map("profile_photo_url")
+  behavioralData   Json?    @map("behavioral_data")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  healthConditions  HealthCondition[]
+  medications       Medication[]
+  vitals            Vital[]
+  consultations     Consultation[]    @relation("PatientConsultations")
+  medicalRecords    MedicalRecord[]
+
+  @@map("patient_profiles")
+}
+
+model DoctorProfile {
+  id                    String   @id @default(uuid())
+  userId                String   @unique @map("user_id")
+  name                  String   @map("nome_completo")
+  crm                   String
+  rqe                   String?
+  mainSpecialty         String   @map("especialidade_principal")
+  bio                   String?
+  profilePhotoUrl       String?  @map("profile_photo_url")
+  isOnline              Boolean  @default(false) @map("is_online")
+  consultationFee       Decimal? @map("consultation_fee") @db.Decimal(10, 2)
+  availability          Json?
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  consultations Consultation[] @relation("DoctorConsultations")
+
+  @@map("doctor_profiles")
+}
+
+model HealthCondition {
+  id             String            @id @default(uuid())
+  patientId      String            @map("patient_id")
+  name           String
+  classification String
+  score          String?
+  severity       ConditionSeverity
+  icon           ConditionIcon     @default(other)
+  lastAssessed   DateTime          @map("last_assessed") @db.Date
+  treatment      String?
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("health_conditions")
+}
+
+model Medication {
+  id                String   @id @default(uuid())
+  patientId         String   @map("patient_id")
+  name              String
+  dosage            String
+  frequency         String
+  instructions      String?
+  nextDose          String?  @map("next_dose")
+  refillBy          DateTime? @map("refill_by") @db.Date
+  quantityRemaining Int?     @map("quantity_remaining")
+  presentation      String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("medications")
+}
+
+model Vital {
+  id         String    @id @default(uuid())
+  patientId  String    @map("patient_id")
+  type       VitalType
+  value      String
+  unit       String?
+  recordedAt DateTime  @default(now()) @map("recorded_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, recordedAt])
+  @@map("vitals")
+}
+
+model Consultation {
+  id          String             @id @default(uuid())
+  patientId   String             @map("patient_id")
+  doctorId    String             @map("doctor_id")
+  type        ConsultationType
+  status      ConsultationStatus @default(waiting)
+  scheduledAt DateTime?          @map("scheduled_at")
+  startedAt   DateTime?          @map("started_at")
+  endedAt     DateTime?          @map("ended_at")
+  duration    Int?
+  cost        Decimal?           @db.Decimal(10, 2)
+  roomUrl     String?            @map("room_url")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  patient        PatientProfile  @relation("PatientConsultations", fields: [patientId], references: [id])
+  doctor         DoctorProfile   @relation("DoctorConsultations", fields: [doctorId], references: [id])
+  medicalRecords MedicalRecord[]
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@map("consultations")
+}
+
+model MedicalRecord {
+  id               String   @id @default(uuid())
+  patientId        String   @map("patient_id")
+  consultationId   String?  @map("consultation_id")
+  title            String
+  summary          String?
+  s3Key            String?  @map("s3_key")
+  mimeType         String?  @map("mime_type")
+  examType         String?  @map("exam_type")
+  aiInterpretation String?  @map("ai_interpretation")
+  uploadedAt       DateTime @default(now()) @map("uploaded_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  patient      PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  consultation Consultation?  @relation(fields: [consultationId], references: [id])
+
+  @@index([patientId])
+  @@map("medical_records")
+}
+
+model PaymentPlan {
+  id            String          @id @default(uuid())
+  type          PaymentPlanType @unique
+  name          String
+  description   String?
+  priceMonthly  Decimal         @map("price_monthly") @db.Decimal(10, 2)
+  stripePriceId String?         @map("stripe_price_id")
+  features      Json?
+  isActive      Boolean         @default(true) @map("is_active")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  subscriptions Subscription[]
+
+  @@map("payment_plans")
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  userId               String             @unique @map("user_id")
+  planId               String             @map("plan_id")
+  stripeCustomerId     String?            @map("stripe_customer_id")
+  stripeSubscriptionId String?            @map("stripe_subscription_id")
+  status               SubscriptionStatus @default(active)
+  currentPeriodEnd     DateTime?          @map("current_period_end")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan PaymentPlan @relation(fields: [planId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  tokenHash String   @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  userId     String?     @map("user_id")
+  action     AuditAction
+  resource   String
+  resourceId String?     @map("resource_id")
+  ip         String?
+  metadata   Json?
+  timestamp  DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, timestamp])
+  @@map("audit_logs")
+}
