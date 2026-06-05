@@ -2,6 +2,15 @@
 
 NestJS 10 + Prisma + PostgreSQL 16 + Redis 7 backend for the EstetoOne telehealth platform.
 
+## Branching
+
+| Branch | Purpose |
+|--------|---------|
+| `develop` | Default integration branch — open all PRs here |
+| `main` | Stable release — promoted manually from `develop` |
+
+See `DIRETIVAS.md` in the workspace root for the full workflow.
+
 ## Prerequisites
 
 - Node.js 20+
