@@ -191,8 +191,10 @@ async function main() {
     skipDuplicates: true,
   });
 
+  let consultationId: string | undefined;
+
   if (patientUser.patientProfile && doctorUser.doctorProfile) {
-    await prisma.consultation.create({
+    const consultation = await prisma.consultation.create({
       data: {
         patientId: patientUser.patientProfile.id,
         doctorId: doctorUser.doctorProfile.id,
@@ -205,7 +207,34 @@ async function main() {
         cost: 150.0,
       },
     });
+    consultationId = consultation.id;
   }
+
+  await prisma.medicalRecord.createMany({
+    data: [
+      {
+        patientId,
+        consultationId,
+        title: 'Hemograma Completo',
+        summary:
+          'Leucócitos: 7.200, Hemácias: 4.900.000, Hemoglobina: 14,2 g/dL. Todos os parâmetros dentro dos limites normais.',
+        examType: 'laboratory',
+        aiInterpretation:
+          'Todos os parâmetros do hemograma estão dentro dos limites normais. Nenhuma alteração significativa detectada.',
+        mimeType: 'application/pdf',
+        uploadedAt: new Date('2025-05-05T10:00:00Z'),
+      },
+      {
+        patientId,
+        title: 'Raio-X de Tórax',
+        summary: 'Campos pulmonares limpos. Coração com dimensões normais.',
+        examType: 'imaging',
+        mimeType: 'image/jpeg',
+        uploadedAt: new Date('2025-04-20T15:30:00Z'),
+      },
+    ],
+    skipDuplicates: true,
+  });
 
   console.log('Seed completed:', {
     patient: patientUser.email,
