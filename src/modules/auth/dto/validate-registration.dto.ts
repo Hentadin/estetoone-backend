@@ -6,11 +6,10 @@ import {
   IsOptional,
   IsString,
   MinLength,
-  ValidateIf,
 } from 'class-validator';
-import { PaymentPlanType, UserRole } from '@prisma/client';
+import { PaymentPlanType } from '@prisma/client';
 
-export class RegisterDto {
+export class ValidateRegistrationDto {
   @IsEmail()
   email!: string;
 
@@ -51,17 +50,4 @@ export class RegisterDto {
 
   @IsEnum(PaymentPlanType)
   planId!: PaymentPlanType;
-
-  @IsEnum(UserRole)
-  role!: UserRole;
-
-  @ValidateIf((dto: RegisterDto) => dto.role === UserRole.doctor)
-  @IsString()
-  @IsNotEmpty()
-  crm?: string;
-
-  @ValidateIf((dto: RegisterDto) => dto.role === UserRole.doctor)
-  @IsString()
-  @IsNotEmpty()
-  mainSpecialty?: string;
 }

@@ -5,6 +5,8 @@ import { DatabaseModule } from './infrastructure/database/database.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { PlansModule } from './modules/plans/plans.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 
 @Module({
@@ -17,6 +19,8 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
     RedisModule,
     HealthModule,
     AuthModule,
+    PlansModule,
+    PaymentsModule,
     ProfilesModule,
   ],
 })
