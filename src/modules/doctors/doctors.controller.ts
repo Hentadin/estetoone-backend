@@ -8,6 +8,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrors } from '../../common/decorators/swagger.decorators';
 import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -21,16 +23,19 @@ import {
   UpdateAvailabilityDto,
 } from './dto/update-availability.dto';
 
+@ApiTags('doctors')
 @Controller('doctors')
 export class DoctorsController {
   constructor(private readonly doctorsService: DoctorsService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Search doctors (paginated)' })
   listDoctors(@Query() query: ListDoctorsQueryDto) {
     return this.doctorsService.listDoctors(query);
   }
 
   @Get('online')
+  @ApiOperation({ summary: 'List online doctors (paginated)' })
   listOnlineDoctors(@Query() query: ListDoctorsQueryDto) {
     return this.doctorsService.listOnlineDoctors(query);
   }
@@ -38,6 +43,9 @@ export class DoctorsController {
   @Get('me/availability')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.doctor, UserRole.admin)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get own availability schedule' })
+  @ApiStandardErrors()
   getMyAvailability(@CurrentUser() user: AuthenticatedUser) {
     return this.doctorsService.getMyAvailability(user);
   }
@@ -45,6 +53,9 @@ export class DoctorsController {
   @Put('me/availability')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.doctor, UserRole.admin)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Replace availability schedule' })
+  @ApiStandardErrors()
   replaceAvailability(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateAvailabilityDto,
@@ -55,6 +66,9 @@ export class DoctorsController {
   @Patch('me/availability')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.doctor, UserRole.admin)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Merge availability schedule' })
+  @ApiStandardErrors()
   patchAvailability(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: PatchAvailabilityDto,
@@ -63,6 +77,7 @@ export class DoctorsController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get doctor detail by profile id' })
   getDoctorById(@Param('id') id: string) {
     return this.doctorsService.getDoctorById(id);
   }

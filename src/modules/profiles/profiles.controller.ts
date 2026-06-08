@@ -8,6 +8,8 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrors } from '../../common/decorators/swagger.decorators';
 import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -19,6 +21,9 @@ import { UpdatePatientProfileDto } from './dto/update-patient-profile.dto';
 import { UploadProfilePhotoDto } from './dto/upload-profile-photo.dto';
 import { ProfilesService } from './profiles.service';
 
+@ApiTags('profiles')
+@ApiBearerAuth('access-token')
+@ApiStandardErrors()
 @Controller('profiles')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ProfilesController {
@@ -26,12 +31,14 @@ export class ProfilesController {
 
   @Get('patient/me')
   @Roles(UserRole.patient, UserRole.admin)
+  @ApiOperation({ summary: 'Get patient profile' })
   getPatientProfile(@CurrentUser() user: AuthenticatedUser) {
     return this.profilesService.getPatientProfile(user);
   }
 
   @Patch('patient/me')
   @Roles(UserRole.patient, UserRole.admin)
+  @ApiOperation({ summary: 'Update patient profile' })
   updatePatientProfile(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdatePatientProfileDto,
@@ -41,6 +48,7 @@ export class ProfilesController {
 
   @Put('patient/me/photo')
   @Roles(UserRole.patient, UserRole.admin)
+  @ApiOperation({ summary: 'Upload patient profile photo' })
   uploadPatientPhoto(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UploadProfilePhotoDto,
@@ -51,18 +59,21 @@ export class ProfilesController {
   @Delete('patient/me/photo')
   @Roles(UserRole.patient, UserRole.admin)
   @HttpCode(200)
+  @ApiOperation({ summary: 'Delete patient profile photo' })
   deletePatientPhoto(@CurrentUser() user: AuthenticatedUser) {
     return this.profilesService.deletePatientPhoto(user);
   }
 
   @Get('doctor/me')
   @Roles(UserRole.doctor, UserRole.admin)
+  @ApiOperation({ summary: 'Get doctor profile' })
   getDoctorProfile(@CurrentUser() user: AuthenticatedUser) {
     return this.profilesService.getDoctorProfile(user);
   }
 
   @Patch('doctor/me')
   @Roles(UserRole.doctor, UserRole.admin)
+  @ApiOperation({ summary: 'Update doctor profile' })
   updateDoctorProfile(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateDoctorProfileDto,
@@ -72,6 +83,7 @@ export class ProfilesController {
 
   @Put('doctor/me/photo')
   @Roles(UserRole.doctor, UserRole.admin)
+  @ApiOperation({ summary: 'Upload doctor profile photo' })
   uploadDoctorPhoto(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UploadProfilePhotoDto,
@@ -82,6 +94,7 @@ export class ProfilesController {
   @Delete('doctor/me/photo')
   @Roles(UserRole.doctor, UserRole.admin)
   @HttpCode(200)
+  @ApiOperation({ summary: 'Delete doctor profile photo' })
   deleteDoctorPhoto(@CurrentUser() user: AuthenticatedUser) {
     return this.profilesService.deleteDoctorPhoto(user);
   }

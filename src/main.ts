@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import * as cookieParser from 'cookie-parser';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
+import { setupSwagger } from './config/swagger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true, bufferLogs: true });
@@ -18,6 +19,8 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  setupSwagger(app);
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
