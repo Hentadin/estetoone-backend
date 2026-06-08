@@ -1,0 +1,1190 @@
+openapi: 3.0.0
+paths:
+  /v1/health/live:
+    get:
+      operationId: HealthController_getLiveness
+      summary: Liveness probe
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LivenessResponseDto"
+      tags: &a1
+        - health
+  /v1/health/ready:
+    get:
+      operationId: HealthController_getReadiness
+      summary: Readiness probe (DB + Redis)
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponseDto"
+        "503":
+          description: Dependencies degraded
+      tags: *a1
+  /v1/health:
+    get:
+      operationId: HealthController_getHealth
+      summary: Aggregate health status (always 200)
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponseDto"
+      tags: *a1
+  /v1/auth/check-email:
+    get:
+      operationId: AuthController_checkEmail
+      summary: Check if email is available for registration
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                properties:
+                  available:
+                    type: boolean
+      tags: &a2
+        - auth
+  /v1/auth/validate-registration:
+    post:
+      operationId: AuthController_validateRegistration
+      summary: Validate registration payload before signup
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateRegistrationDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                properties:
+                  valid:
+                    type: boolean
+                    enum:
+                      - true
+        "400":
+          description: Validation error or invalid input
+        "401":
+          description: Missing or invalid JWT
+        "403":
+          description: Insufficient role permissions
+        "404":
+          description: Resource not found
+      tags: *a2
+  /v1/auth/register:
+    post:
+      operationId: AuthController_register
+      summary: Register a new user (sets refresh_token cookie)
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponseDto"
+        "400":
+          description: Validation error or invalid input
+        "401":
+          description: Missing or invalid JWT
+        "403":
+          description: Insufficient role permissions
+        "404":
+          description: Resource not found
+      tags: *a2
+  /v1/auth/login:
+    post:
+      operationId: AuthController_login
+      summary: Login with email and password
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponseDto"
+        "400":
+          description: Validation error or invalid input
+        "401":
+          description: Missing or invalid JWT
+        "403":
+          description: Insufficient role permissions
+        "404":
+          description: Resource not found
+      tags: *a2
+  /v1/auth/refresh:
+    post:
+      operationId: AuthController_refresh
+      summary: Refresh access token using refresh_token cookie
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponseDto"
+      tags: *a2
+      security:
+        - refresh_token: []
+  /v1/auth/logout:
+    post:
+      operationId: AuthController_logout
+      summary: Logout and clear refresh cookie
+      parameters: []
+      responses:
+        "204":
+          description: ""
+      tags: *a2
+      security:
+        - refresh_token: []
+  /v1/auth/me:
+    get:
+      operationId: AuthController_getMe
+      summary: Get current authenticated user
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponseDto"
+      tags: *a2
+      security:
+        - access-token: []
+    delete:
+      operationId: AuthController_deleteMe
+      summary: Delete current user account
+      parameters: []
+      responses:
+        "204":
+          description: ""
+        "400":
+          description: Validation error or invalid input
+        "401":
+          description: Missing or invalid JWT
+        "403":
+          description: Insufficient role permissions
+        "404":
+          description: Resource not found
+      tags: *a2
+      security:
+        - access-token: []
+  /v1/plans:
+    get:
+      operationId: PlansController_listPlans
+      summary: List available subscription plans
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlanResponseDto"
+      tags: &a3
+        - plans
+  /v1/plans/{planId}/validate:
+    get:
+      operationId: PlansController_validatePlan
+      summary: Validate plan availability by id
+      parameters:
+        - name: planId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanResponseDto"
+      tags: *a3
+  /v1/payments/plans:
+    get:
+      operationId: PaymentsController_listPlans
+      summary: List payment plans
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentPlanResponseDto"
+      tags: &a4
+        - payments
+  /v1/payments/setup-intent:
+    post:
+      operationId: PaymentsController_createSetupIntent
+      summary: Create Stripe setup intent (mocked without STRIPE_SECRET_KEY)
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetupIntentResponseDto"
+        "400":
+          description: Validation error or invalid input
+        "401":
+          description: Missing or invalid JWT
+        "403":
+          description: Insufficient role permissions
+        "404":
+          description: Resource not found
+      tags: *a4
+      security:
+        - access-token: []
+  /v1/payments/subscription:
+    get:
+      operationId: PaymentsController_getSubscription
+      summary: Get current user subscription
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionResponseDto"
+        "400":
+          description: Validation error or invalid input
+        "401":
+          description: Missing or invalid JWT
+        "403":
+          description: Insufficient role permissions
+        "404":
+          description: Resource not found
+      tags: *a4
+      security:
+        - access-token: []
+  /v1/payments/webhook:
+    post:
+      operationId: StripeWebhookController_handleWebhook
+      summary: Stripe webhook handler (raw body + signature)
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                properties:
+                  received:
+                    type: boolean
+                    enum:
+                      - true
+      tags:
+        - payments
+      security:
+        - stripe-signature: []
+  /v1/profiles/patient/me:
+    get:
+      operationId: ProfilesController_getPatientProfile
+      summary: Get patient profile
+      parameters: []
+      responses:
+        "200":
+          description: ""
+        "400": &a5
+          description: Validation error or invalid input
+        "401": &a6
+          description: Missing or invalid JWT
+        "403": &a7
+          description: Insufficient role permissions
+        "404": &a8
+          description: Resource not found
+      tags: &a9
+        - profiles
+      security: &a10
+        - access-token: []
+    patch:
+      operationId: ProfilesController_updatePatientProfile
+      summary: Update patient profile
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePatientProfileDto"
+      responses:
+        "200":
+          description: ""
+        "400": *a5
+        "401": *a6
+        "403": *a7
+        "404": *a8
+      tags: *a9
+      security: *a10
+  /v1/profiles/patient/me/photo:
+    put:
+      operationId: ProfilesController_uploadPatientPhoto
+      summary: Upload patient profile photo
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadProfilePhotoDto"
+      responses:
+        "200":
+          description: ""
+        "400": *a5
+        "401": *a6
+        "403": *a7
+        "404": *a8
+      tags: *a9
+      security: *a10
+    delete:
+      operationId: ProfilesController_deletePatientPhoto
+      summary: Delete patient profile photo
+      parameters: []
+      responses:
+        "200":
+          description: ""
+        "400": *a5
+        "401": *a6
+        "403": *a7
+        "404": *a8
+      tags: *a9
+      security: *a10
+  /v1/profiles/doctor/me:
+    get:
+      operationId: ProfilesController_getDoctorProfile
+      summary: Get doctor profile
+      parameters: []
+      responses:
+        "200":
+          description: ""
+        "400": *a5
+        "401": *a6
+        "403": *a7
+        "404": *a8
+      tags: *a9
+      security: *a10
+    patch:
+      operationId: ProfilesController_updateDoctorProfile
+      summary: Update doctor profile
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDoctorProfileDto"
+      responses:
+        "200":
+          description: ""
+        "400": *a5
+        "401": *a6
+        "403": *a7
+        "404": *a8
+      tags: *a9
+      security: *a10
+  /v1/profiles/doctor/me/photo:
+    put:
+      operationId: ProfilesController_uploadDoctorPhoto
+      summary: Upload doctor profile photo
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadProfilePhotoDto"
+      responses:
+        "200":
+          description: ""
+        "400": *a5
+        "401": *a6
+        "403": *a7
+        "404": *a8
+      tags: *a9
+      security: *a10
+    delete:
+      operationId: ProfilesController_deleteDoctorPhoto
+      summary: Delete doctor profile photo
+      parameters: []
+      responses:
+        "200":
+          description: ""
+        "400": *a5
+        "401": *a6
+        "403": *a7
+        "404": *a8
+      tags: *a9
+      security: *a10
+  /v1/medical-records/me:
+    get:
+      operationId: MedicalRecordsController_listMyRecords
+      summary: List patient medical records
+      parameters: []
+      responses:
+        "200":
+          description: ""
+        "400": &a11
+          description: Validation error or invalid input
+        "401": &a12
+          description: Missing or invalid JWT
+        "403": &a13
+          description: Insufficient role permissions
+        "404": &a14
+          description: Resource not found
+      tags: &a15
+        - medical-records
+      security: &a16
+        - access-token: []
+    post:
+      operationId: MedicalRecordsController_createMyRecord
+      summary: Create medical record
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMedicalRecordDto"
+      responses:
+        "201":
+          description: ""
+        "400": *a11
+        "401": *a12
+        "403": *a13
+        "404": *a14
+      tags: *a15
+      security: *a16
+  /v1/medical-records/me/{id}:
+    get:
+      operationId: MedicalRecordsController_getMyRecord
+      summary: Get medical record detail
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+        "400": *a11
+        "401": *a12
+        "403": *a13
+        "404": *a14
+      tags: *a15
+      security: *a16
+    delete:
+      operationId: MedicalRecordsController_deleteMyRecord
+      summary: Delete medical record
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+        "400": *a11
+        "401": *a12
+        "403": *a13
+        "404": *a14
+      tags: *a15
+      security: *a16
+  /v1/health-wallet/me:
+    get:
+      operationId: HealthWalletController_getMyWallet
+      summary: Get aggregated health wallet
+      parameters: []
+      responses:
+        "200":
+          description: ""
+        "400": &a17
+          description: Validation error or invalid input
+        "401": &a18
+          description: Missing or invalid JWT
+        "403": &a19
+          description: Insufficient role permissions
+        "404": &a20
+          description: Resource not found
+      tags: &a21
+        - health-wallet
+      security: &a22
+        - access-token: []
+  /v1/health-wallet/me/vitals:
+    get:
+      operationId: HealthWalletController_listMyVitals
+      summary: List patient vitals
+      parameters: []
+      responses:
+        "200":
+          description: ""
+        "400": *a17
+        "401": *a18
+        "403": *a19
+        "404": *a20
+      tags: *a21
+      security: *a22
+    post:
+      operationId: HealthWalletController_createMyVital
+      summary: Record a vital sign
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVitalDto"
+      responses:
+        "201":
+          description: ""
+        "400": *a17
+        "401": *a18
+        "403": *a19
+        "404": *a20
+      tags: *a21
+      security: *a22
+  /v1/health-wallet/me/consultations:
+    get:
+      operationId: HealthWalletController_listMyConsultations
+      summary: List consultation records for health wallet
+      parameters: []
+      responses:
+        "200":
+          description: ""
+        "400": *a17
+        "401": *a18
+        "403": *a19
+        "404": *a20
+      tags: *a21
+      security: *a22
+  /v1/doctors:
+    get:
+      operationId: DoctorsController_listDoctors
+      summary: Search doctors (paginated)
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: &a23
+        - doctors
+  /v1/doctors/online:
+    get:
+      operationId: DoctorsController_listOnlineDoctors
+      summary: List online doctors (paginated)
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      tags: *a23
+  /v1/doctors/me/availability:
+    get:
+      operationId: DoctorsController_getMyAvailability
+      summary: Get own availability schedule
+      parameters: []
+      responses:
+        "400":
+          description: Validation error or invalid input
+        "401":
+          description: Missing or invalid JWT
+        "403":
+          description: Insufficient role permissions
+        "404":
+          description: Resource not found
+      tags: *a23
+      security:
+        - access-token: []
+    put:
+      operationId: DoctorsController_replaceAvailability
+      summary: Replace availability schedule
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAvailabilityDto"
+      responses:
+        "400":
+          description: Validation error or invalid input
+        "401":
+          description: Missing or invalid JWT
+        "403":
+          description: Insufficient role permissions
+        "404":
+          description: Resource not found
+      tags: *a23
+      security:
+        - access-token: []
+    patch:
+      operationId: DoctorsController_patchAvailability
+      summary: Merge availability schedule
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchAvailabilityDto"
+      responses:
+        "400":
+          description: Validation error or invalid input
+        "401":
+          description: Missing or invalid JWT
+        "403":
+          description: Insufficient role permissions
+        "404":
+          description: Resource not found
+      tags: *a23
+      security:
+        - access-token: []
+  /v1/doctors/{id}:
+    get:
+      operationId: DoctorsController_getDoctorById
+      summary: Get doctor detail by profile id
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      tags: *a23
+  /v1/consultations/schedule:
+    post:
+      operationId: ConsultationsController_scheduleConsultation
+      summary: Schedule a consultation
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleConsultationDto"
+      responses:
+        "201":
+          description: ""
+        "400": &a24
+          description: Validation error or invalid input
+        "401": &a25
+          description: Missing or invalid JWT
+        "403": &a26
+          description: Insufficient role permissions
+        "404": &a27
+          description: Resource not found
+      tags: &a28
+        - consultations
+      security: &a29
+        - access-token: []
+  /v1/consultations/instant/request:
+    post:
+      operationId: ConsultationsController_requestInstantConsultation
+      summary: Request instant consultation
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstantConsultationRequestDto"
+      responses:
+        "201":
+          description: ""
+        "400": *a24
+        "401": *a25
+        "403": *a26
+        "404": *a27
+      tags: *a28
+      security: *a29
+  /v1/consultations/instant/match:
+    post:
+      operationId: ConsultationsController_matchInstantConsultation
+      summary: Doctor accepts next queued instant consultation
+      parameters: []
+      responses:
+        "201":
+          description: ""
+        "400": *a24
+        "401": *a25
+        "403": *a26
+        "404": *a27
+      tags: *a28
+      security: *a29
+  /v1/consultations/me:
+    get:
+      operationId: ConsultationsController_getMyConsultations
+      summary: List consultations for current role
+      parameters: []
+      responses:
+        "200":
+          description: ""
+        "400": *a24
+        "401": *a25
+        "403": *a26
+        "404": *a27
+      tags: *a28
+      security: *a29
+  /v1/consultations/me/history:
+    get:
+      operationId: ConsultationsController_getMyHistory
+      summary: Get consultation history
+      parameters: []
+      responses:
+        "200":
+          description: ""
+        "400": *a24
+        "401": *a25
+        "403": *a26
+        "404": *a27
+      tags: *a28
+      security: *a29
+  /v1/consultations/{id}/status:
+    patch:
+      operationId: ConsultationsController_updateConsultationStatus
+      summary: Update consultation status
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateConsultationStatusDto"
+      responses:
+        "200":
+          description: ""
+        "400": *a24
+        "401": *a25
+        "403": *a26
+        "404": *a27
+      tags: *a28
+      security: *a29
+  /v1/consultations/{id}/session:
+    get:
+      operationId: ConsultationsController_getVideoSession
+      summary: Get video session room URL
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+        "400": *a24
+        "401": *a25
+        "403": *a26
+        "404": *a27
+      tags: *a28
+      security: *a29
+    post:
+      operationId: ConsultationsController_createVideoSession
+      summary: Create/start video session
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+        "400": *a24
+        "401": *a25
+        "403": *a26
+        "404": *a27
+      tags: *a28
+      security: *a29
+  /v1/doctor-dashboard/patients:
+    get:
+      operationId: DoctorDashboardController_listPatients
+      summary: List linked patients
+      parameters: []
+      responses:
+        "200":
+          description: ""
+        "400": &a30
+          description: Validation error or invalid input
+        "401": &a31
+          description: Missing or invalid JWT
+        "403": &a32
+          description: Insufficient role permissions
+        "404": &a33
+          description: Resource not found
+      tags: &a34
+        - doctor-dashboard
+      security: &a35
+        - access-token: []
+    post:
+      operationId: DoctorDashboardController_addPatient
+      summary: Link patient to doctor
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddPatientDto"
+      responses:
+        "201":
+          description: ""
+        "400": *a30
+        "401": *a31
+        "403": *a32
+        "404": *a33
+      tags: *a34
+      security: *a35
+  /v1/doctor-dashboard/appointments/today:
+    get:
+      operationId: DoctorDashboardController_getTodayAppointments
+      summary: Get today's appointments
+      parameters: []
+      responses:
+        "200":
+          description: ""
+        "400": *a30
+        "401": *a31
+        "403": *a32
+        "404": *a33
+      tags: *a34
+      security: *a35
+  /v1/doctor-dashboard/online-status:
+    patch:
+      operationId: DoctorDashboardController_updateOnlineStatus
+      summary: Toggle doctor online status
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOnlineStatusDto"
+      responses:
+        "200":
+          description: ""
+        "400": *a30
+        "401": *a31
+        "403": *a32
+        "404": *a33
+      tags: *a34
+      security: *a35
+info:
+  title: EstetoOne API
+  description: REST API for EstetoOne (telehealth platform). All routes are
+    prefixed with `/v1` unless noted. Authenticate with Bearer JWT; refresh
+    tokens are issued as HttpOnly `refresh_token` cookies.
+  version: 1.0.0
+  contact: {}
+tags: []
+servers:
+  - url: http://localhost:3000/v1
+    description: Local development
+components:
+  securitySchemes:
+    access-token:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+      in: header
+    cookie:
+      type: apiKey
+      in: cookie
+      name: refresh_token
+      description: HttpOnly refresh token cookie (login/register/refresh)
+    stripe-signature:
+      type: apiKey
+      in: header
+      name: stripe-signature
+  schemas:
+    LivenessResponseDto:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - timestamp
+    HealthResponseDto:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+            - degraded
+        db:
+          type: string
+          enum:
+            - up
+            - down
+        redis:
+          type: string
+          enum:
+            - up
+            - down
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - db
+        - redis
+        - timestamp
+    ValidateRegistrationDto:
+      type: object
+      properties: {}
+    RegisterDto:
+      type: object
+      properties: {}
+    AuthUserDto:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum:
+            - patient
+            - doctor
+            - admin
+        name:
+          type: string
+      required:
+        - id
+        - email
+        - role
+    AuthResponseDto:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        user:
+          $ref: "#/components/schemas/AuthUserDto"
+      required:
+        - accessToken
+        - user
+    LoginDto:
+      type: object
+      properties: {}
+    MeResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum:
+            - patient
+            - doctor
+            - admin
+        planId:
+          type: object
+          nullable: true
+        profile:
+          type: object
+          additionalProperties: true
+          nullable: true
+      required:
+        - id
+        - email
+        - role
+    PlanResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        name:
+          type: string
+        description:
+          type: object
+          nullable: true
+        priceMonthly:
+          type: number
+        features:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - type
+        - name
+        - priceMonthly
+        - features
+    PaymentPlanResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          enum:
+            - basic
+            - premium
+            - family
+            - doctor
+        type:
+          type: string
+          enum:
+            - basic
+            - premium
+            - family
+            - doctor
+        name:
+          type: string
+        description:
+          type: object
+          nullable: true
+        priceMonthly:
+          type: number
+        features:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - type
+        - name
+        - description
+        - priceMonthly
+        - features
+    SetupIntentResponseDto:
+      type: object
+      properties:
+        clientSecret:
+          type: string
+        setupIntentId:
+          type: string
+      required:
+        - clientSecret
+        - setupIntentId
+    SubscriptionResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        planId:
+          type: string
+        planType:
+          type: string
+          enum:
+            - basic
+            - premium
+            - family
+            - doctor
+        planName:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - past_due
+            - cancelled
+            - trialing
+        currentPeriodEnd:
+          type: object
+          nullable: true
+          format: date-time
+        stripeCustomerId:
+          type: object
+          nullable: true
+      required:
+        - id
+        - planId
+        - planType
+        - planName
+        - status
+        - currentPeriodEnd
+        - stripeCustomerId
+    UpdatePatientProfileDto:
+      type: object
+      properties: {}
+    UploadProfilePhotoDto:
+      type: object
+      properties: {}
+    UpdateDoctorProfileDto:
+      type: object
+      properties: {}
+    CreateMedicalRecordDto:
+      type: object
+      properties: {}
+    CreateVitalDto:
+      type: object
+      properties: {}
+    UpdateAvailabilityDto:
+      type: object
+      properties: {}
+    PatchAvailabilityDto:
+      type: object
+      properties: {}
+    ScheduleConsultationDto:
+      type: object
+      properties: {}
+    InstantConsultationRequestDto:
+      type: object
+      properties: {}
+    UpdateConsultationStatusDto:
+      type: object
+      properties: {}
+    AddPatientDto:
+      type: object
+      properties: {}
+    UpdateOnlineStatusDto:
+      type: object
+      properties: {}
