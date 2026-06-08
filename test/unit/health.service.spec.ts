@@ -34,4 +34,24 @@ describe('HealthService', () => {
     expect(result.status).toBe('degraded');
     expect(result.redis).toBe('down');
   });
+
+  it('returns liveness without checking dependencies', () => {
+    const result = service.getLiveness();
+
+    expect(result.status).toBe('ok');
+    expect(result.timestamp).toBeDefined();
+    expect(healthRepository.checkDatabase).not.toHaveBeenCalled();
+    expect(healthRepository.checkRedis).not.toHaveBeenCalled();
+  });
+
+  it('readiness mirrors dependency checks', async () => {
+    healthRepository.checkDatabase = jest.fn().mockResolvedValue(true);
+    healthRepository.checkRedis = jest.fn().mockResolvedValue(true);
+
+    const result = await service.getReadiness();
+
+    expect(result.status).toBe('ok');
+    expect(healthRepository.checkDatabase).toHaveBeenCalled();
+    expect(healthRepository.checkRedis).toHaveBeenCalled();
+  });
 });

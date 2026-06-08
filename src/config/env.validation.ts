@@ -13,6 +13,7 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().optional().default(''),
   STRIPE_WEBHOOK_SECRET: z.string().optional().default(''),
   LOG_LEVEL: z.string().default('info'),
+  SENTRY_DSN: z.string().url().optional().or(z.literal('')),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
