@@ -30,4 +30,24 @@ describe('Health endpoint (e2e)', () => {
       timestamp: expect.any(String),
     });
   });
+
+  it('GET /v1/health/live returns liveness without dependency checks', async () => {
+    const response = await request(app.getHttpServer()).get('/v1/health/live').expect(200);
+
+    expect(response.body).toEqual({
+      status: 'ok',
+      timestamp: expect.any(String),
+    });
+  });
+
+  it('GET /v1/health/ready returns 200 when dependencies are up', async () => {
+    const response = await request(app.getHttpServer()).get('/v1/health/ready').expect(200);
+
+    expect(response.body).toMatchObject({
+      status: 'ok',
+      db: 'up',
+      redis: 'up',
+      timestamp: expect.any(String),
+    });
+  });
 });
