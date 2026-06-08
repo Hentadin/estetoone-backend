@@ -1,0 +1,37 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging-api
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    uses: ./.github/workflows/ci.yml
+
+  deploy-staging:
+    needs: quality
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://api-staging.estetoone.com.br
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Deploy to ECS (staging)
+        run: |
+          echo "Build artifact ready for ECS staging deploy."
+          echo "Configure AWS secrets (AWS_ROLE_ARN, ECR_REPOSITORY) to enable automated CD."
+          echo "Manual runbook: docs/DEPLOYMENT.md"

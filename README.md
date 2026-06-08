@@ -7,9 +7,10 @@ NestJS 10 + Prisma + PostgreSQL 16 + Redis 7 backend for the EstetoOne telehealt
 | Branch | Purpose |
 |--------|---------|
 | `develop` | Default integration branch — open all PRs here |
-| `main` | Stable release — promoted manually from `develop` |
+| `staging` | QA + frontend integration — promoted from `develop` |
+| `main` | Production — promoted from `staging` |
 
-See `DIRETIVAS.md` in the workspace root for the full workflow.
+Flow: `feature → develop → staging → main`. See [docs/BRANCHING.md](docs/BRANCHING.md).
 
 ## Prerequisites
 

@@ -10,7 +10,7 @@ Architecture reference: [HEN-6](https://github.com/Hentadin/estetoone-backend) �
 | `staging` | QA + frontend integration | `https://api-staging.estetoone.com.br` |
 | `prod` | Production | `https://api.estetoone.com.br` |
 
-All PRs target the `develop` branch. Production promotion from `develop` → `main` is manual.
+All PRs target the `develop` branch. Promotion flow: `develop → staging → main` (see [BRANCHING.md](BRANCHING.md)).
 
 ## AWS Architecture (MVP)
 
@@ -91,7 +91,13 @@ Restore procedure:
 
 ## CI/CD Pipeline
 
-GitHub Actions (`.github/workflows/ci.yml`):
+| Branch | Workflow | Steps |
+|--------|----------|-------|
+| `develop` | `ci.yml` | lint, test, build |
+| `staging` | `deploy-staging.yml` | CI + ECS staging deploy |
+| `main` | `deploy-prod.yml` | CI + ECS production deploy |
+
+CI steps (`ci.yml`):
 
 1. `npm ci`
 2. `npx prisma migrate deploy`
@@ -99,7 +105,8 @@ GitHub Actions (`.github/workflows/ci.yml`):
 4. `npm run test:integration`
 5. `npm run build`
 
-Deployment (manual until CD is configured):
+ECS CD hooks activate when `AWS_ROLE_ARN` and `ECR_REPOSITORY` secrets are configured. Until then, deploy workflows build and gate on CI; apply ECS updates per runbook:
+
 1. Build Docker image → push to ECR
 2. Update ECS service task definition
 3. Verify `GET /v1/health/ready` returns 200

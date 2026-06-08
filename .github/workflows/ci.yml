@@ -5,6 +5,7 @@ on:
     branches: [develop]
   pull_request:
     branches: [develop]
+  workflow_call:
 
 jobs:
   test:
@@ -41,10 +42,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Validate branch model
+        run: node scripts/validate-branch-model.mjs
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+
       - run: npm ci
       - run: npx prisma migrate deploy
       - run: npm run test:unit
